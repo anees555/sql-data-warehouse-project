@@ -1,108 +1,130 @@
 # SQL Data Warehouse Project
 
-This project implements a modern SQL Server data warehouse using a **Medallion architecture** (**Bronze → Silver → Gold**).  
-It includes end-to-end ETL logic, data cleaning and standardization, dimensional modeling, and quality checks for analytics-ready reporting.
+A production-style SQL Server data warehouse project built with a **Medallion architecture (Bronze → Silver → Gold)** and an extended **Exploratory Data Analysis (EDA)** layer for business insights.
 
-## Project Goals
+## Project Objectives
 
-- Consolidate CRM and ERP source data into a centralized warehouse.
-- Apply structured transformations to improve data quality and consistency.
-- Deliver business-ready dimensional and fact models for reporting and analysis.
-- Validate data integrity at Silver and Gold layers through SQL-based quality checks.
+- Integrate CRM and ERP source datasets into a centralized warehouse.
+- Apply structured cleansing and transformation logic to improve data quality.
+- Publish analytics-ready dimensional models for BI and reporting.
+- Validate data reliability with SQL-based quality checks.
+- Provide reusable EDA and reporting SQL assets for stakeholder analysis.
 
-## Architecture Overview
+## Architecture Summary
 
-### Bronze Layer (Raw Ingestion)
-- Stores raw data from source CSV files with minimal transformation.
-- Uses `BULK INSERT` in a stored procedure for ingestion.
-- Designed for traceability and reproducible reloads.
+### Bronze (Raw Ingestion)
 
-### Silver Layer (Cleaned & Standardized)
-- Applies cleansing, normalization, and transformation logic.
-- Handles nulls, invalid values, duplicate handling, and field standardization.
-- Adds warehouse metadata columns such as `dwh_create_date`.
+- Ingests source CSV files with minimal transformation.
+- Uses `BULK INSERT` inside `bronze.load_bronze`.
+- Preserves source-level traceability.
 
-### Gold Layer (Business Model)
-- Exposes analytics-ready star schema objects using SQL views:
+### Silver (Cleaned & Standardized)
+
+- Applies cleansing, normalization, deduplication, and enrichment.
+- Standardizes categorical values and fixes invalid/null records.
+- Adds warehouse metadata such as `dwh_create_date`.
+
+### Gold (Business Model)
+
+- Exposes star-schema analytical views:
   - `gold.dim_customers`
   - `gold.dim_products`
   - `gold.fact_sales`
-- Optimized for BI/reporting consumption.
+- Supports downstream reporting and dashboarding.
 
-## Data Pipeline Workflow
+### EDA and Reporting Layer
 
-1. **Initialize database and schemas**
-   - Run `scripts/init_database.sql`
-2. **Create Bronze objects**
-   - Run `scripts/bronze/ddl_bronze.sql`
-3. **Load Bronze data**
-   - Run `scripts/bronze/load_data_bronze.sql` (`EXEC bronze.load_bronze;`)
-4. **Create Silver objects**
-   - Run `scripts/silver/ddl_silver.sql`
-5. **Load Silver data**
-   - Run `scripts/silver/load_data_silver_sql` (`EXEC silver.load_silver;`)
-6. **Create Gold views**
-   - Run `scripts/gold/ddl_gold.sql`
-7. **Run quality checks**
+- Includes progressive SQL analysis scripts for profiling, trends, ranking, segmentation, and performance evaluation.
+- Adds reusable report views:
+  - `gold.report_customers`
+  - `gold.report_products`
+
+## End-to-End Workflow
+
+Run scripts in this order:
+
+1. `scripts/init_database.sql`
+2. `scripts/bronze/ddl_bronze.sql`
+3. `scripts/bronze/load_data_bronze.sql` (`EXEC bronze.load_bronze;`)
+4. `scripts/silver/ddl_silver.sql`
+5. `scripts/silver/load_data_silver_sql` (`EXEC silver.load_silver;`)
+6. `scripts/gold/ddl_gold.sql`
+7. Optional EDA/reporting scripts in `scripts/EDA/`
+8. Validation scripts:
    - `test/quality_checks_silver.sql`
    - `test/quality_checks_gold.sql`
 
-## Tools and Techniques
+## EDA Script Coverage
 
-- **Database**: Microsoft SQL Server
-- **Language**: T-SQL
-- **Modeling approach**: Star schema (dimensions + fact)
-- **Data architecture**: Medallion (Bronze/Silver/Gold)
-- **Ingestion**: `BULK INSERT` from CSV
-- **Transformation patterns**:
-  - Standardization with `CASE`, `TRIM`, `UPPER`, `REPLACE`
-  - Deduplication with `ROW_NUMBER()`
-  - Null/invalid handling with `ISNULL`, `NULLIF`, conditional logic
-  - Temporal handling with `LEAD()` for end-date derivation
-- **Quality validation**: SQL assertion-style checks for uniqueness, referential integrity, and data consistency
+The EDA suite under `scripts/EDA/` includes:
+
+- Database and schema exploration
+- Dimension and date-range exploration
+- KPI and magnitude analysis
+- Ranking and trend analysis
+- Cumulative and performance analysis
+- Customer/product segmentation
+- Part-to-whole contribution analysis
+- Business report view creation
 
 ## Repository Structure
 
 ```text
 sql-data-warehouse-project/
-├── datasets/                    # Source data files (placeholders in repo)
+├── datasets/                    # Source data files (not versioned in full)
 ├── docs/
-│   ├── data_catalog.md          # Gold-layer data dictionary
+│   ├── data_catalog.md          # Gold-layer data catalog
 │   ├── data_model.png
 │   ├── data_flow_diagram1.drawio.png
-│   └── data_warehouse_architecture.drawio (3).png
+│   ├── data_warehouse_architecture.drawio (3).png
+│   └── eda_architecture_block_diagram.md
 ├── scripts/
-│   ├── init_database.sql        # Creates database and Bronze/Silver/Gold schemas
+│   ├── init_database.sql
 │   ├── bronze/
-│   │   ├── ddl_bronze.sql       # Bronze table definitions
-│   │   └── load_data_bronze.sql # Bronze load stored procedure
+│   │   ├── ddl_bronze.sql
+│   │   └── load_data_bronze.sql
 │   ├── silver/
-│   │   ├── ddl_silver.sql       # Silver table definitions
-│   │   └── load_data_silver_sql # Silver load stored procedure
-│   └── gold/
-│       └── ddl_gold.sql         # Gold analytical views
+│   │   ├── ddl_silver.sql
+│   │   └── load_data_silver_sql
+│   ├── gold/
+│   │   └── ddl_gold.sql
+│   └── EDA/
+│       ├── 01_database_exploration.sql
+│       ├── 02_dimension_exploration.sql
+│       ├── 03_date_range_exploration.sql
+│       ├── 04_measures_exploration.sql
+│       ├── 05_magnitude_analysis.sql
+│       ├── 06_ranking_analysis.sql
+│       ├── 07_change_over_time_analysis.sql
+│       ├── 08_cumulative_analysis.sql
+│       ├── 09_performance_analysis.sql
+│       ├── 10_data_segmentation.sql
+│       ├── 11_part_to_whole_analysis.sql
+│       ├── 12_report_customers.sql
+│       └── 13_report_products.sql
 ├── test/
 │   ├── quality_checks_silver.sql
 │   └── quality_checks_gold.sql
 └── README.md
 ```
 
-## Data Quality and Validation
+## Data Quality Validation
 
-The project includes SQL-based validation scripts to ensure:
+Validation scripts cover:
 
-- No null/duplicate keys in core entities.
-- Standardized categorical values.
-- Valid date ranges and logical date ordering.
-- Correct sales calculations (`sales = quantity × price`).
-- Fact-to-dimension relationship integrity in Gold layer.
+- Duplicate/null key detection in core entities
+- Whitespace and categorical standardization checks
+- Date validity and chronological consistency checks
+- Sales consistency checks (`sales_amount`, `quantity`, `price`)
+- Fact-to-dimension relationship integrity checks
 
 ## Usage Notes
 
-- The initialization script drops and recreates the `DataWarehouse` database; use caution in non-development environments.
-- Update file paths in `BULK INSERT` statements to match your local environment before execution.
-- Execute scripts in the workflow order shown above for a successful full pipeline run.
+- `init_database.sql` drops and recreates `DataWarehouse`; use only in safe environments.
+- Update local file paths in Bronze `BULK INSERT` statements before execution.
+- Execute the workflow sequentially to ensure dependency-safe loading.
 
 ## Documentation
 
-- See `/docs/data_catalog.md` for detailed Gold-layer column definitions.
+- Gold data dictionary: `docs/data_catalog.md`
+- EDA architecture block diagram: `docs/eda_architecture_block_diagram.md`
